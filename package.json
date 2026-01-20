@@ -1,0 +1,26 @@
+{
+  "name": "tini-url",
+  "version": "1.0.0",
+  "description": "Rút gọn URL",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hiepphuc/tini-url.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hiepphuc/tini-url/issues"
+  },
+  "homepage": "https://github.com/hiepphuc/tini-url#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "mongoose": "^9.1.4",
+    "nanoid": "^3.3.11"
+  }
+}
