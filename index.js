@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require('path')
 const app = express();
 const PORT = 3000;
 const Url = require('./models/Url');
@@ -10,9 +11,10 @@ mongoose.connect(process.env.MONGO_URI)
     .catch(err => console.error('Could not connect to MongoDB:', err));
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-    res.send('Hello World!')
+    res.sendFile(path.join(__dirname, 'index.html'))
 })
 
 app.get('/:shortUrlId', async (req, res) => {
@@ -32,7 +34,7 @@ app.get('/:shortUrlId', async (req, res) => {
 })
 
 app.post('/shorten', (req, res) => {
-    let originalUrl = req.body.originalUrl
+    let originalUrl = req.body['url-input']
     // Sanitize (lam sach chuoi) để url đúng chuẩn http(s)://...
     if (!originalUrl.startsWith('http')) {
         originalUrl = `http://${originalUrl}`
