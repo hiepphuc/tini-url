@@ -6,7 +6,7 @@ const UrlSchema = new mongoose.Schema({
     originalUrl: {
         type: String,
         required: true,
-        unique: true,
+        unique: false,
     },
     shortUrlId: {
         type: String,

@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'))
-})
+});
 
 app.get('/:shortUrlId', async (req, res) => {
     const shortUrlId = req.params.shortUrlId;
@@ -31,7 +31,7 @@ app.get('/:shortUrlId', async (req, res) => {
         console.error(err);
         res.status(500).json('Server Error');
     }
-})
+});
 
 app.post('/shorten', async (req, res) => {
     let originalUrl = req.body['url-input'];
@@ -61,31 +61,49 @@ app.post('/shorten', async (req, res) => {
         return; // Kết thức ngay lập tức nếu link chết hoặc website hiện không hoạt động
     }
 
-    // Rút gọn URL
-    Url.findOne({ originalUrl: originalUrl }).exec()
-        .then(url => {
-            if (url) {
-                // TRƯỜNG HỢP 1: Đã tìm thấy
-                res.send(`localhost:${PORT}/${url.shortUrlId}`)
-            } else {
-                // TRƯỜNG HỢP 2: Không tìm thấy (url là null)
-                Url.create({ originalUrl: originalUrl })
-                    .then(newUrl => {
-                        res.send(`localhost:${PORT}/${newUrl.shortUrlId}`);
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        res.status(500).json('Server Error');
-                    })
+    const customId = req.body['custom-id-input'];
+    // Nếu người dùng nhập custom ID (custom name)
+    if (customId) {
+        try {
+            const url = await Url.findOne({ shortUrlId: customId }).exec();
+
+            // Nếu id chưa có người chọn (trong db chưa có id này thì tạo link rút gọn với id này)
+            if (!url) {
+                const newUrl = await Url.create({ originalUrl: originalUrl, shortUrlId: customId });
+                res.send(`localhost:${PORT}/${customId}`);
             }
-        })
-        .catch(err => {
-            // TRƯỜNG HỢP 3: Lỗi hệ thống (DB chết, mạng lỗi...)
+            // Nếu có người chọn rồi thì báo lỗi id (name) đã được chọn bởi người khác 
+            else {
+                res.status(400).json('Duplicate name: The name you chose has already been chosen by someone else.');
+            }
+            return;
+        }
+        catch (err) {
             console.error(err);
-            res.status(500).json('Server Error');
-        })
-})
+            return res.status(500).json('Server Error');
+        }
+    }
+
+    // Nếu chạy xuống đây túc là người dùng không nhập custom id
+    try {
+        const url = await Url.findOne({ originalUrl: originalUrl }).exec();
+
+        // TRƯỜNG HỢP 1: Đã tìm thấy url trong database, gửi phản hồi và DỪNG hàm luôn
+        if (url) {
+            return res.send(`localhost:${PORT}/${url.shortUrlId}`);
+        }
+
+        // TRƯỜNG HỢP 2: Nếu code chạy đến đây nghĩa là không tìm thấy (url là null)
+        const newUrl = await Url.create({ originalUrl: originalUrl });
+        res.send(`localhost:${PORT}/${newUrl.shortUrlId}`);
+
+    } catch (err) {
+        // TRƯỜNG HỢP 3: Lỗi hệ thống (DB chết, mạng lỗi...)
+        console.error(err);
+        res.status(500).json('Server Error');
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`App listening on port ${PORT}`);
-})
+});

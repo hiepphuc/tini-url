@@ -17,8 +17,12 @@
         <h1 class="text-center mt-5">URL Shortener</h1>
         <form action="/shorten" method="post">
             <div class="mb-3">
-                <label for="url-input" class="form-label">Enter URL</label>
-                <input type="text" class="form-control" id="url-input" name="url-input">
+                <label for="url-input" class="form-label">Enter URL:</label>
+                <input type="text" class="form-control" id="url-input" name="url-input" required>
+            </div>
+            <div class="mb-3">
+                <label for="custom-id-input" class="form-label">Enter custom ID (custom name) for your url (Leave blank to generate randomly):</label>
+                <input type="text" class="form-control" id="custom-id-input" name="custom-id-input">
             </div>
             <button type="submit" class="btn btn-primary">Shorten</button>
         </form>
