@@ -45,7 +45,7 @@ app.post('/shorten', async (req, res) => {
     async function isValidUrl(url) {
         try {
             const response = await fetch(url, {
-                method: 'HEAD',
+                method: 'GET',
                 // Một số web chặn bot, nên giả vờ là trình duyệt
                 headers: { 'User-Agent': 'Mozilla/5.0' }
             });
