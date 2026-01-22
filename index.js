@@ -43,15 +43,28 @@ app.post('/shorten', async (req, res) => {
 
     // Kiểm tra URL, nếu không hợp lệ thì thông báo cho user
     async function isValidUrl(url) {
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => {
+            abortController.abort();
+        }, 3000);
+
         try {
             const response = await fetch(url, {
                 method: 'GET',
                 // Một số web chặn bot, nên giả vờ là trình duyệt
-                headers: { 'User-Agent': 'Mozilla/5.0' }
+                headers: { 'User-Agent': 'Mozilla/5.0' },
+                signal: abortController.signal
             });
+
+            clearTimeout(timeoutId);
+
             return response.ok; // Trả về true nếu status code là 2xx
         } catch (error) {
-            console.log("Check URL error:", error.message);
+            if (error.name === 'AbortError') {
+                console.log('Request bị hủy do quá hạn (Timeout)!');
+            } else {
+                console.log('Lỗi khác:', error);
+            }
             return false;
         }
     }
