@@ -45,6 +45,11 @@ function verifyToken(req, res, next) {
 app.get('/me', verifyToken, (req, res) => {
     res.json(req.user);
 })
+// Route để test method populate của mongoose
+app.get('/history', verifyToken, async (req, res) => {
+    const urls = await Url.find({userId: req.user._id}).populate('userId', '_id username email').exec();
+    res.json(urls);
+});
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'))
@@ -66,7 +71,7 @@ app.get('/:shortUrlId', async (req, res) => {
     }
 });
 
-app.post('/shorten', async (req, res) => {
+app.post('/shorten', verifyToken, async (req, res) => {
     let originalUrl = req.body['url-input'];
 
     // Sanitize (làm sạch chuỗi) để url đúng chuẩn http(s)://...
@@ -115,7 +120,7 @@ app.post('/shorten', async (req, res) => {
 
             // Nếu id chưa có người chọn (trong db chưa có id này thì tạo link rút gọn với id này)
             if (!url) {
-                const newUrl = await Url.create({ originalUrl: originalUrl, shortUrlId: customId });
+                const newUrl = await Url.create({ originalUrl: originalUrl, shortUrlId: customId, userId: req.user._id });
                 res.send(`localhost:${PORT}/${customId}`);
             }
             // Nếu có người chọn rồi thì báo lỗi id (name) đã được chọn bởi người khác 
@@ -140,7 +145,7 @@ app.post('/shorten', async (req, res) => {
         }
 
         // TRƯỜNG HỢP 2: Nếu code chạy đến đây nghĩa là không tìm thấy (url là null)
-        const newUrl = await Url.create({ originalUrl: originalUrl });
+        const newUrl = await Url.create({ originalUrl: originalUrl, userId: req.user._id });
         res.send(`localhost:${PORT}/${newUrl.shortUrlId}`);
 
     } catch (err) {

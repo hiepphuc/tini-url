@@ -13,6 +13,10 @@ const UrlSchema = new mongoose.Schema({
         required: true,
         unique: true,
         default: () => nanoid(8) // Tự động sinh mã 8 ký tự nếu không gửi lên
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }
 });
 
