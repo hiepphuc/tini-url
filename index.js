@@ -55,6 +55,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'))
 });
 
+// API dùng để redirect user khi user dùng link rút gọn
 app.get('/:shortUrlId', async (req, res) => {
     const shortUrlId = req.params.shortUrlId;
     try {
@@ -62,6 +63,23 @@ app.get('/:shortUrlId', async (req, res) => {
         if (url) {
             console.log(req.url ,url.originalUrl);
             res.redirect(url.originalUrl);
+        } else {
+            res.send('Invalid URL, please check again or create a new one.')
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json('Server Error');
+    }
+});
+
+// API dùng để xóa url (link rút gọn) (ví dụ user muốn xóa link rút gọn đã tạo)
+app.delete('/:shortUrlId', verifyToken, async (req, res) => {
+    const shortUrlId = req.params.shortUrlId;
+    try {
+        const url = await Url.findOneAndDelete({ shortUrlId: shortUrlId, userId: req.user._id }).exec();
+        if (url) {
+            console.log(req.method, req.url ,url.originalUrl);
+            res.json('Deleted successfully');
         } else {
             res.send('Invalid URL, please check again or create a new one.')
         }
