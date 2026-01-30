@@ -58,10 +58,10 @@ app.get('/', (req, res) => {
 app.get('/:shortUrlId', async (req, res) => {
     const shortUrlId = req.params.shortUrlId;
     try {
-        const url = await Url.findOne({ shortUrlId: shortUrlId }).exec()
+        const url = await Url.findOneAndUpdate({ shortUrlId: shortUrlId }, {$inc: {visitCount: 1}}, {new: true}).exec();
         if (url) {
-            console.log(url.originalUrl);
-            res.redirect(url.originalUrl)
+            console.log(req.url ,url.originalUrl);
+            res.redirect(url.originalUrl);
         } else {
             res.send('Invalid URL, please check again or create a new one.')
         }

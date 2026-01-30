@@ -17,6 +17,10 @@ const UrlSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
+    },
+    visitCount: {
+        type: Number,
+        default: 0
     }
 });
 
