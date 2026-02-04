@@ -145,6 +145,10 @@ app.post('/shorten', verifyToken, async (req, res) => {
     const customId = req.body['custom-id-input'];
     // Nếu người dùng nhập custom ID (custom name)
     if (customId) {
+        // Nếu custom id (alias) không hợp lệ thì thông báo lỗi cho user
+        if (!/^[A-Za-z0-9-]+$/.test(customId)) {
+            res.status(400).json({error: 'Custom alias can only contain letters, numbers, and dashes'})
+        }
         try {
             const url = await Url.findOne({ shortUrlId: customId }).exec();
 
