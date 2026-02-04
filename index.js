@@ -7,7 +7,7 @@ const app = express();
 const PORT = 3000;
 const Url = require('./models/Url');
 const User = require('./models/User');
-
+require('crypto').randomBytes(32).toString('hex')
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('Connected to MongoDB! 🍃'))
     .catch(err => console.error('Could not connect to MongoDB:', err));
@@ -28,7 +28,7 @@ function verifyToken(req, res, next) {
     // 3. Kiểm tra tính hợp lệ
     try {
         // Thử xác thực
-        const verified = jwt.verify(token, 'secret_123');
+        const verified = jwt.verify(token, process.env.JWT_SECRETY);
         
         // Nếu ok, gán thông tin user vào request để các route sau dùng được
         req.user = verified; 
@@ -229,7 +229,7 @@ app.post('/login', async (req, res) => {
     if (! await user.matchPassword(password)) return res.status(400).send('Password incorrect');
 
     // Trường hợp login thành công (username và password đúng)
-    const token = jwt.sign({ _id: user._id }, 'secret_123');
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRETY);
     res.json({ token: token });
 });
 
