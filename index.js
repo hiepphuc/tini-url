@@ -147,33 +147,29 @@ app.post('/shorten', verifyToken, async (req, res) => {
     if (customId) {
         // Nếu custom id (alias) không hợp lệ thì thông báo lỗi cho user
         if (!/^[A-Za-z0-9-]+$/.test(customId)) {
-            res.status(400).json({error: 'Custom alias can only contain letters, numbers, and dashes'})
+            return res.status(400).json({error: 'Custom alias can only contain letters, numbers, and dashes'})
         }
         try {
-            const url = await Url.findOne({ shortUrlId: customId }).exec();
-
-            // Nếu id chưa có người chọn (trong db chưa có id này thì tạo link rút gọn với id này)
-            if (!url) {
-                const newUrl = await Url.create({ originalUrl: originalUrl, shortUrlId: customId, userId: req.user._id });
-                res.send(`localhost:${PORT}/${customId}`);
-            }
-            // Nếu có người chọn rồi thì báo lỗi id (name) đã được chọn bởi người khác 
-            else {
-                res.status(400).json('Duplicate name: The name you chose has already been chosen by someone else.');
-            }
-            return;
+            // Nếu id chưa có người chọn thì tạo, nếu đã có người chọn thì mongodb sẽ throw error
+            await Url.create({ originalUrl: originalUrl, shortUrlId: customId, userId: req.user._id });
+            return res.json({shortUrl: `localhost:${PORT}/${customId}`});
         }
         catch (err) {
+            // Lỗi E11000 Duplicate Error (field unique bị trùng giá trị)
+            if (err.code === 11000) {
+                return res.status(400).json({error: 'This name is already taken, please choose a another one.'});    
+            }
+            // Lỗi khác
             console.error(err);
             return res.status(500).json({error: 'Server Error'});
         }
     }
-
+    req
     // Nếu chạy xuống đây túc là người dùng không nhập custom id
     try {
         // Tọa một doc trong db
         const newUrl = await Url.create({ originalUrl: originalUrl, userId: req.user._id });
-        res.send(`localhost:${PORT}/${newUrl.shortUrlId}`);
+        res.json({shortUrl: `localhost:${PORT}/${newUrl.shortUrlId}`});
 
     } catch (err) {
         // TRƯỜNG HỢP2 : Lỗi hệ thống (DB chết, mạng lỗi...)
