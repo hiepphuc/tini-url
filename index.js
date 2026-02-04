@@ -128,36 +128,18 @@ app.post('/shorten', verifyToken, async (req, res) => {
     }
 
     // Kiểm tra URL, nếu không hợp lệ thì thông báo cho user
-    async function isValidUrl(url) {
-        const abortController = new AbortController();
-        const timeoutId = setTimeout(() => {
-            abortController.abort();
-        }, 3000);
-
+    function isValidUrl(url) {
         try {
-            const response = await fetch(url, {
-                method: 'GET',
-                // Một số web chặn bot, nên giả vờ là trình duyệt
-                headers: { 'User-Agent': 'Mozilla/5.0' },
-                signal: abortController.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            return response.ok; // Trả về true nếu status code là 2xx
+            // Nếu url hợp lệ, không thì sẽ báo lỗi (chạy xuống catch trả về false)
+            new URL(url);
+            return true;
         } catch (error) {
-            if (error.name === 'AbortError') {
-                console.log('Request bị hủy do quá hạn (Timeout)!');
-            } else {
-                console.log('Lỗi khác:', error);
-            }
             return false;
         }
     }
-    const isLive = await isValidUrl(originalUrl);
-    if (!isLive) {
-        res.status(400).send('Invalid URL or Website is down!');
-        return; // Kết thức ngay lập tức nếu link chết hoặc website hiện không hoạt động
+    if (!isValidUrl(originalUrl)) {
+        // Kết thức ngay lập tức nếu url không hợp lệ
+        return res.status(400).json({error: 'Invalid URL'});
     }
 
     const customId = req.body['custom-id-input'];
@@ -179,7 +161,7 @@ app.post('/shorten', verifyToken, async (req, res) => {
         }
         catch (err) {
             console.error(err);
-            return res.status(500).json('Server Error');
+            return res.status(500).json({error: 'Server Error'});
         }
     }
 
@@ -202,7 +184,7 @@ app.post('/register', async (req, res) => {
     try {
         // Nếu username|email đã tồn tại (tìm thấy user trong db) thì báo lỗi username|email đã tồn tại
         let temp_user = await User.findOne({ $or: [{ username: username }, { email: email }] }).exec();
-        if (temp_user) return res.status(400).send('Username or email existent');
+        if (temp_user) return res.status(400).json({error: 'Username or email existent'});
 
         // Trường hợp tạo tài khoản cho người dùng
         await User.create({ username, password, email });
@@ -217,7 +199,7 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username: username }).exec();
     // Nếu username không đúng (không tìm thấy user trong db) thì báo lỗi username không tồn tại
-    if (!user) return res.status(400).send('Username nonexistent');
+    if (!user) return res.status(400).send({error: 'Username nonexistent'});
     // Nếu username đúng, password không đúng thì báo lỗi password không đúng
     if (! await user.matchPassword(password)) return res.status(400).send('Password incorrect');
 
