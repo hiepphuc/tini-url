@@ -7,7 +7,7 @@ const app = express();
 const PORT = 3000;
 const Url = require('./models/Url');
 const User = require('./models/User');
-require('crypto').randomBytes(32).toString('hex')
+
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('Connected to MongoDB! 🍃'))
     .catch(err => console.error('Could not connect to MongoDB:', err));
@@ -28,7 +28,7 @@ function verifyToken(req, res, next) {
     // 3. Kiểm tra tính hợp lệ
     try {
         // Thử xác thực
-        const verified = jwt.verify(token, process.env.JWT_SECRETY);
+        const verified = jwt.verify(token, process.env.JWT_SECRET);
         
         // Nếu ok, gán thông tin user vào request để các route sau dùng được
         req.user = verified; 
@@ -185,19 +185,12 @@ app.post('/shorten', verifyToken, async (req, res) => {
 
     // Nếu chạy xuống đây túc là người dùng không nhập custom id
     try {
-        const url = await Url.findOne({ originalUrl: originalUrl }).exec();
-
-        // TRƯỜNG HỢP 1: Đã tìm thấy url trong database, gửi phản hồi và DỪNG hàm luôn
-        if (url) {
-            return res.send(`localhost:${PORT}/${url.shortUrlId}`);
-        }
-
-        // TRƯỜNG HỢP 2: Nếu code chạy đến đây nghĩa là không tìm thấy (url là null)
+        // Tọa một doc trong db
         const newUrl = await Url.create({ originalUrl: originalUrl, userId: req.user._id });
         res.send(`localhost:${PORT}/${newUrl.shortUrlId}`);
 
     } catch (err) {
-        // TRƯỜNG HỢP 3: Lỗi hệ thống (DB chết, mạng lỗi...)
+        // TRƯỜNG HỢP2 : Lỗi hệ thống (DB chết, mạng lỗi...)
         console.error(err);
         res.status(500).json('Server Error');
     }
@@ -229,7 +222,7 @@ app.post('/login', async (req, res) => {
     if (! await user.matchPassword(password)) return res.status(400).send('Password incorrect');
 
     // Trường hợp login thành công (username và password đúng)
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRETY);
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
     res.json({ token: token });
 });
 
