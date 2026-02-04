@@ -89,6 +89,36 @@ app.delete('/:shortUrlId', verifyToken, async (req, res) => {
     }
 });
 
+// API dùng để cập nhật url (link rút gọn) (ví dụ user muốn sửa lại link gốc hoặc alias (custom-id))
+app.patch('/:shortUrlId', verifyToken, async (req, res) => {
+    const shortUrlId = req.params.shortUrlId;
+    const originalUrl = req.body['url-input'];
+    const customId = req.body['custom-id-input'];
+
+    try {
+        const updatedUrl = {};
+        if (originalUrl) updatedUrl.originalUrl = originalUrl;
+        if (customId) updatedUrl.shortUrlId = customId;
+
+        const url = await Url.findOneAndUpdate( { shortUrlId: shortUrlId, userId: req.user._id }, updatedUrl, { new: true } ).exec();
+
+        if (url) {
+            console.log(req.method, req.url ,url.originalUrl);
+            res.json('Updated successfully');
+        } else {
+            res.send('Invalid URL, please check again or create a new one.')
+        }
+    } catch (err) {
+        console.error(err);
+        // Lỗi E11000 Duplicate Error (field unique bị trùng giá trị)
+        if (err.code === 11000) {
+            res.status(400).json('This name is already taken, please choose a another one.');    
+        } else {
+            res.status(500).json('Server Error');
+        }
+    }
+});
+
 app.post('/shorten', verifyToken, async (req, res) => {
     let originalUrl = req.body['url-input'];
 
