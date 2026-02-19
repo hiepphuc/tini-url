@@ -42,17 +42,17 @@ function verifyToken(req, res, next) {
 };
 
 // Route để test middle verifyToken
-app.get('/me', verifyToken, (req, res) => {
+app.get('/api/me', verifyToken, (req, res) => {
     res.json(req.user);
 })
 // Route để test method populate của mongoose
-app.get('/history', verifyToken, async (req, res) => {
+app.get('/api/history', verifyToken, async (req, res) => {
     const urls = await Url.find({userId: req.user._id}).populate('userId', '_id username email').exec();
     res.json(urls);
 });
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'))
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // API dùng để redirect user khi user dùng link rút gọn
@@ -73,8 +73,8 @@ app.get('/:shortUrlId', async (req, res) => {
 });
 
 // API dùng để xóa url (link rút gọn) (ví dụ user muốn xóa link rút gọn đã tạo)
-app.delete('/:shortUrlId', verifyToken, async (req, res) => {
-    const shortUrlId = req.params.shortUrlId;
+app.delete('/api/delete', verifyToken, async (req, res) => {
+    const shortUrlId = req.query.shortUrlId;
     try {
         const url = await Url.findOneAndDelete({ shortUrlId: shortUrlId, userId: req.user._id }).exec();
         if (url) {
@@ -90,8 +90,8 @@ app.delete('/:shortUrlId', verifyToken, async (req, res) => {
 });
 
 // API dùng để cập nhật url (link rút gọn) (ví dụ user muốn sửa lại link gốc hoặc alias (custom-id))
-app.patch('/:shortUrlId', verifyToken, async (req, res) => {
-    const shortUrlId = req.params.shortUrlId;
+app.patch('/api/update', verifyToken, async (req, res) => {
+    const shortUrlId = req.query.shortUrlId;
     const originalUrl = req.body['url-input'];
     const customId = req.body['custom-id-input'];
 
@@ -119,7 +119,7 @@ app.patch('/:shortUrlId', verifyToken, async (req, res) => {
     }
 });
 
-app.post('/shorten', verifyToken, async (req, res) => {
+app.post('/api/shorten', verifyToken, async (req, res) => {
     let originalUrl = req.body['url-input'];
 
     // Sanitize (làm sạch chuỗi) để url đúng chuẩn http(s)://...
@@ -152,7 +152,7 @@ app.post('/shorten', verifyToken, async (req, res) => {
         try {
             // Nếu id chưa có người chọn thì tạo, nếu đã có người chọn thì mongodb sẽ throw error
             await Url.create({ originalUrl: originalUrl, shortUrlId: customId, userId: req.user._id });
-            return res.json({shortUrl: `localhost:${PORT}/${customId}`});
+            return res.json({shortUrl: `${req.hostname}:${PORT}/${customId}`});
         }
         catch (err) {
             // Lỗi E11000 Duplicate Error (field unique bị trùng giá trị)
@@ -164,12 +164,12 @@ app.post('/shorten', verifyToken, async (req, res) => {
             return res.status(500).json({error: 'Server Error'});
         }
     }
-    req
+
     // Nếu chạy xuống đây túc là người dùng không nhập custom id
     try {
         // Tọa một doc trong db
         const newUrl = await Url.create({ originalUrl: originalUrl, userId: req.user._id });
-        res.json({shortUrl: `localhost:${PORT}/${newUrl.shortUrlId}`});
+        res.json({shortUrl: `${req.hostname}:${PORT}/${newUrl.shortUrlId}`});
 
     } catch (err) {
         // TRƯỜNG HỢP2 : Lỗi hệ thống (DB chết, mạng lỗi...)
@@ -178,7 +178,7 @@ app.post('/shorten', verifyToken, async (req, res) => {
     }
 });
 
-app.post('/register', async (req, res) => {
+app.post('/api/register', async (req, res) => {
     const { username, password, email } = req.body;
 
     try {
@@ -195,7 +195,7 @@ app.post('/register', async (req, res) => {
     }
 });
 
-app.post('/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username: username }).exec();
     // Nếu username không đúng (không tìm thấy user trong db) thì báo lỗi username không tồn tại
