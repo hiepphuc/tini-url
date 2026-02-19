@@ -5,9 +5,11 @@ const PORT = parseInt(process.env.PORT) || 3000;
 const path = require('path');
 const connectDB = require('./config/db');
 
-//Import routes
+//Import routes & controllers
 const authRoutes = require('./routes/auth.routes');
 const urlRoutes = require('./routes/url.routes');
+const { redirectToUrl } = require('./controllers/url.controller');
+
 
 // Ket noi DB
 connectDB();
@@ -21,9 +23,12 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// API dùng để redirect khi user dùng link rút gọn
+app.use('/:shortUrlId', redirectToUrl);
+
 // API routes
 app.use('/api/auth', authRoutes);
-app.use('api/url', urlRoutes);
+app.use('/api/url', urlRoutes);
 
 app.listen(PORT, () => {
     console.log(`App listening on port ${PORT}`);

@@ -1,4 +1,3 @@
-const { PORT } = require("..");
 const Url = require("../models/Url");
 
 async function getUrlHistory(req, res) {
@@ -43,7 +42,7 @@ async function shortenUrl(req, res) {
         try {
             // Nếu id chưa có người chọn thì tạo, nếu đã có người chọn thì mongodb sẽ throw error
             await Url.create({ originalUrl: originalUrl, shortUrlId: customId, userId: req.user._id });
-            return res.json({ shortUrl: `${req.hostname}:${PORT}/${customId}` });
+            return res.json({ shortUrl: `${req.hostname}/${customId}` });
         }
         catch (err) {
             // Lỗi E11000 Duplicate Error (field unique bị trùng giá trị)
@@ -60,7 +59,7 @@ async function shortenUrl(req, res) {
     try {
         // Tọa một doc trong db
         const newUrl = await Url.create({ originalUrl: originalUrl, userId: req.user._id });
-        res.json({ shortUrl: `${req.hostname}:${PORT}/${newUrl.shortUrlId}` });
+        res.json({ shortUrl: `${req.hostname}/${newUrl.shortUrlId}` });
 
     } catch (err) {
         // TRƯỜNG HỢP2 : Lỗi hệ thống (DB chết, mạng lỗi...)

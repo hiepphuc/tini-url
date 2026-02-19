@@ -4,11 +4,8 @@ const { shortenUrl, getUrlHistory, redirectToUrl, deleteUrl, updateUrl } = requi
 const verifyToken = require('../middlewares/auth.middleware.js');
 
 
-// Route để test method populate của mongoose
+// API dùng để xem lịch sử các url đã rút gọn của user
 router.get('/history', verifyToken, getUrlHistory);
-
-// API dùng để redirect user khi user dùng link rút gọn
-router.get('/:shortUrlId', redirectToUrl);
 
 // API dùng để xóa url (link rút gọn) (ví dụ user muốn xóa link rút gọn đã tạo)
 router.delete('/delete', verifyToken, deleteUrl);
