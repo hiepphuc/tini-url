@@ -23,12 +23,12 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// API dùng để redirect khi user dùng link rút gọn
-app.use('/:shortUrlId', redirectToUrl);
-
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/url', urlRoutes);
+
+// API dùng để redirect khi user dùng link rút gọn
+app.get('/:shortUrlId', redirectToUrl);
 
 app.listen(PORT, () => {
     console.log(`App listening on port ${PORT}`);
