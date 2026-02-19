@@ -1,9 +1,13 @@
 const { PORT } = require("..");
 const Url = require("../models/Url");
 
-async function getUrlHistory() {
-    const urls = await Url.find({ userId: req.user._id }).populate('userId', '_id username email').exec();
-    res.json(urls);
+async function getUrlHistory(req, res) {
+    try {
+        const urls = await Url.find({ userId: req.user._id }).populate('userId', '_id username email').exec();
+        res.json(urls);
+    } catch (err) {
+        res.status(500).json('Server Error');
+    }
 };
 
 async function shortenUrl(req, res) {
