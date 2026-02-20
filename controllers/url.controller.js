@@ -1,4 +1,5 @@
 const Url = require("../models/Url");
+const AppError = require('../utils/AppError');
 
 async function getUrlHistory(req, res) {
     const urls = await Url.find({ userId: req.user._id }).populate('userId', '_id username email').exec();
