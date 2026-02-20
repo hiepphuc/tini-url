@@ -10,6 +10,9 @@ const authRoutes = require('./routes/auth.routes');
 const urlRoutes = require('./routes/url.routes');
 const { redirectToUrl } = require('./controllers/url.controller');
 
+//Import middlewares
+const errorHandler = require('./middlewares/errorHandler');
+
 
 // Ket noi DB
 connectDB();
@@ -29,6 +32,8 @@ app.use('/api/url', urlRoutes);
 
 // API dùng để redirect khi user dùng link rút gọn
 app.get('/:shortUrlId', redirectToUrl);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`App listening on port ${PORT}`);
