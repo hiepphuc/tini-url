@@ -34,6 +34,9 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/url', urlRoutes);
 
+// Bỏ qua request xin favicon của trình duyệt
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // API dùng để redirect khi user dùng link rút gọn
 app.get('/:shortUrlId', redirectToUrl);
 
