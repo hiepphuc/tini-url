@@ -2,8 +2,27 @@ const Url = require("../models/Url");
 const AppError = require('../utils/AppError');
 
 async function getUrlHistory(req, res) {
-    const urls = await Url.find({ userId: req.user._id }).populate('userId', '_id username email').exec();
-    res.json(urls);
+    // 1. Lấy tham số và ép kiểu về số nguyên (mặc định page 1, limit 10)
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skipAmount = (page - 1) * limit;
+
+    // 2. Chạy song song 2 lệnh: Lấy danh sách URL và Đếm tổng số lượng URL của user
+    const [urls, totalUrls] = await Promise.all([
+        Url.find({ userId: req.user._id }).sort({_id: -1}).skip(skipAmount).limit(limit).populate('userId', '_id username email').exec(),
+        Url.countDocuments({ userId: req.user._id }).exec()
+    ]);
+
+    // 3. Trả về JSON bao gồm cả Data và Metadata
+    res.json({
+        data: urls,
+        pagination: {
+            totalUrls: totalUrls,
+            totalPages: Math.ceil(totalUrls / limit),
+            currentPage: page,
+            itemsPerPage: limit
+        }
+    });
 };
 
 async function shortenUrl(req, res) {
