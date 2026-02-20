@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const helmet = require('helmet');
 const app = express();
 const PORT = parseInt(process.env.PORT) || 3000;
 const path = require('path');
@@ -16,6 +17,9 @@ const errorHandler = require('./middlewares/errorHandler');
 
 // Ket noi DB
 connectDB();
+
+// Kích hoạt helmet thiết lập các http header bảo mật
+app.use(helmet());
 
 // Middlewares chung (JSON và FORM)
 app.use(express.json());
