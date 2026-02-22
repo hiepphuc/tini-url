@@ -19,7 +19,16 @@ const errorHandler = require('./middlewares/errorHandler');
 connectDB();
 
 // Kích hoạt helmet thiết lập các http header bảo mật
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"], // Cho phép mã JS viết trực tiếp trong thẻ <script>
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], // Cho phép load CSS từ Bootstrap CDN
+            connectSrc: ["'self'", "https://cdn.jsdelivr.net"] // Cho phép trình duyệt tải file map của Bootstrap
+        }
+    }
+}));
 
 // Middlewares chung (JSON và FORM)
 app.use(express.json());

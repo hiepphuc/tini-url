@@ -4,30 +4,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-        crossorigin="anonymous"></script>
-    <title>URL Shortener</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Tini URL - URL Shortener</title>
 </head>
 
-<body>
-    <div class="container-sm">
-        <h1 class="text-center mt-5">URL Shortener</h1>
-        <form action="/shorten" method="post">
-            <div class="mb-3">
-                <label for="url-input" class="form-label">Enter URL:</label>
-                <input type="text" class="form-control" id="url-input" name="url-input" required>
+<body class="bg-light">
+    <div class="container mt-5" style="max-width: 600px;">
+        <h1 class="text-center mb-4">🔗 Tini URL</h1>
+
+        <div id="auth-section" class="card p-4 shadow-sm">
+            <h3 class="text-center mb-3">Đăng Nhập</h3>
+            <form id="login-form">
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="login-username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="login-password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Đăng Nhập</button>
+            </form>
+            <div id="login-error" class="text-danger mt-2 text-center"></div>
+        </div>
+
+        <div id="app-section" class="card p-4 shadow-sm" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="m-0">Rút gọn URL</h3>
+                <button id="logout-btn" class="btn btn-sm btn-outline-danger">Đăng Xuất</button>
             </div>
-            <div class="mb-3">
-                <label for="custom-id-input" class="form-label">Enter custom ID (custom name) for your url (Leave blank to generate randomly):</label>
-                <input type="text" class="form-control" id="custom-id-input" name="custom-id-input">
-            </div>
-            <button type="submit" class="btn btn-primary">Shorten</button>
-        </form>
+
+            <form id="shorten-form">
+                <div class="mb-3">
+                    <label for="url-input" class="form-label">Nhập link gốc (Bắt buộc):</label>
+                    <input type="url" class="form-control" id="url-input" required placeholder="https://example.com">
+                </div>
+                <div class="mb-3">
+                    <label for="custom-id-input" class="form-label">Custom ID (Tùy chọn):</label>
+                    <input type="text" class="form-control" id="custom-id-input" placeholder="Vi-du-123">
+                </div>
+                <button type="submit" class="btn btn-success w-100">Tạo Link Rút Gọn</button>
+            </form>
+
+            <div id="result-message" class="mt-3 text-center"></div>
+
+            <hr>
+            <button id="load-history-btn" class="btn btn-secondary w-100">Xem Lịch Sử (Trang 1)</button>
+            <ul id="history-list" class="list-group mt-3"></ul>
+        </div>
     </div>
 
+    <script>
+        // --- CÁC BIẾN DOM CHÍNH ---
+        const authSection = document.getElementById('auth-section');
+        const appSection = document.getElementById('app-section');
+        const loginForm = document.getElementById('login-form');
+        const shortenForm = document.getElementById('shorten-form');
+        const resultMessage = document.getElementById('result-message');
+
+        // --- KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP KHI LOAD TRANG ---
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                authSection.style.display = 'none';
+                appSection.style.display = 'block';
+            } else {
+                authSection.style.display = 'block';
+                appSection.style.display = 'none';
+            }
+        }
+        checkAuth();
+
+        // --- XỬ LÝ ĐĂNG NHẬP ---
+        loginForm.addEventListener('submit', async (e) => {
+            console.log(e);
+            console.log(document.getElementById('login-username').value) ;
+            console.log(document.getElementById('login-password').value) ;
+            e.preventDefault(); // Chặn hành vi load lại trang của form HTML
+
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                // Gọi API Login
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Thành công: Lưu token vào trình duyệt và chuyển giao diện
+                    localStorage.setItem('token', data.token);
+                    document.getElementById('login-error').innerText = '';
+                    checkAuth();
+                } else {
+                    // Thất bại: In ra lỗi từ Global Error Handler của backend
+                    document.getElementById('login-error').innerText = data.error || 'Đăng nhập thất bại!';
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('login-error').innerText = 'Lỗi kết nối đến Server!';
+            }
+        });
+
+        // --- ĐĂNG XUẤT ---
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('token'); // Xóa token
+            checkAuth(); // Quay lại màn hình đăng nhập
+            resultMessage.innerHTML = ''; // Xóa thông báo cũ
+            document.getElementById('history-list').innerHTML = '';
+        });
+
+        // --- XỬ LÝ RÚT GỌN URL ---
+        shortenForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const originalUrl = document.getElementById('url-input').value;
+            const customId = document.getElementById('custom-id-input').value;
+            const token = localStorage.getItem('token'); // Lấy token để gửi kèm
+
+            resultMessage.innerHTML = '<span class="text-secondary">Đang xử lý...</span>';
+
+            try {
+                const response = await fetch('/api/url/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // Gắn token vào Header
+                    },
+                    body: JSON.stringify({
+                        'url-input': originalUrl,
+                        'custom-id-input': customId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Tạo ra một thẻ <a> có thể click được
+                    resultMessage.innerHTML = `
+                        <div class="alert alert-success">
+                            Thành công! Link của bạn là:<br>
+                            <a href="${data.shortUrl}" target="_blank" class="fw-bold">${data.shortUrl}</a>
+                        </div>
+                    `;
+                } else {
+                    // Hiển thị lỗi (ví dụ: Trùng tên, URL không hợp lệ, Spam...)
+                    resultMessage.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                }
+            } catch (err) {
+                resultMessage.innerHTML = `<div class="alert alert-danger">Lỗi kết nối mạng</div>`;
+            }
+        });
+
+        // --- XEM LỊCH SỬ (Tích hợp phân trang) ---
+        document.getElementById('load-history-btn').addEventListener('click', async () => {
+            const token = localStorage.getItem('token');
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '<li class="list-group-item text-center">Đang tải...</li>';
+
+            try {
+                // Truyền tham số page=1 và limit=5 lên API
+                const response = await fetch('/api/url/history?page=1&limit=5', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const result = await response.json(); // Nhận về { data, pagination }
+
+                if (response.ok) {
+                    historyList.innerHTML = '';
+                    if (result.data.length === 0) {
+                        historyList.innerHTML = '<li class="list-group-item">Chưa có link nào được tạo.</li>';
+                        return;
+                    }
+
+                    // Duyệt qua mảng data và render HTML
+                    result.data.forEach(item => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        li.innerHTML = `
+                            <div class="text-truncate" style="max-width: 70%;">
+                                <strong>${item.shortUrlId}</strong><br>
+                                <small class="text-muted">${item.originalUrl}</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">Lượt click: ${item.visitCount}</span>
+                        `;
+                        historyList.appendChild(li);
+                    });
+                }
+            } catch (err) {
+                historyList.innerHTML = '<li class="list-group-item text-danger">Lỗi khi tải lịch sử</li>';
+            }
+        });
+    </script>
 </body>
 
 </html>
